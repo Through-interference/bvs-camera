@@ -1,0 +1,11 @@
+{
+  "bandwidth_mhz": 20,
+  "drones": [
+    {
+      "id": "drone1",
+      "link_id": 1,
+      "frequency_mhz": 2412,
+      "air_interface": "wlan1"
+    }
+  ]
+}
