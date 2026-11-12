@@ -8,6 +8,12 @@ RTP → WFB-ng (шифрование и FEC). Обратные метрики Н
 [Through-interference/nsy-server](https://github.com/Through-interference/nsy-server).
 Этот проект не требует исходников НСУ или прежней папки `video-link`.
 
+Для приоритетной демонстрации телеметрии ≥300 кбит/с есть отдельный режим без
+камеры: `bash start-telemetry.sh --interface wlan1 --plan`. Он принимает UDP
+бортового компьютера и поддерживает обратные UDP-команды, поиск резервной частоты
+и сбор протокола испытаний. Запуск на железе и границы подтверждения 3 км описаны
+в [инструкции приёмки](docs/TELEMETRY_ACCEPTANCE.md).
+
 ## 1. Подключение и получение проекта
 
 Ориентир: Raspberry Pi 4B, Camera V2/IMX219, 64-битная Raspberry Pi OS.
