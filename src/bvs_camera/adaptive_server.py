@@ -35,7 +35,7 @@ class Engine:
     def __init__(self,camera,radio,mode,simulation_state=None):
         self.camera=camera;self.radio=radio;self.mode=mode;self.policy=Policy();self.simulation_state=simulation_state
         self.lock=threading.RLock();self.automatic=True;self.error=None;self.current=None
-        self.last_metric=None;self.transitions=[];self.closed=False;self.grace_until=0
+        self.last_metric=None;self.transitions=[];self.closed=False;self.grace_until=0;self.restart_at=0
     def apply(self,p,reason):
         previous=self.current
         try:
@@ -72,14 +72,27 @@ class Engine:
             if profile and self.automatic:
                 try:self.apply(profile,self.policy.reason)
                 except Exception:self.policy.index=old;raise
+    def poll(self):
+        with self.lock:
+            now=time.monotonic()
+            if self.closed or now<self.grace_until:return
+            status=self.camera.status()
+            age=status.get('frame_age_s')
+            stalled=status.get('running') is False or ('frame_age_s' in status and (age is None or age>5))
+            if self.current and stalled:
+                if now<self.restart_at:return
+                try:self.apply(self.current,'camera stopped or RTP stalled')
+                except Exception:pass  # apply records the error; retry without a busy loop.
+                self.restart_at=time.monotonic()+3
+                return
+            if self.automatic:
+                old=self.policy.index;p=self.policy.tick()
+                if p:
+                    try:self.apply(p,self.policy.reason)
+                    except Exception:self.policy.index=old
     def tick(self):
         while not self.closed:
-            with self.lock:
-                if self.automatic and time.monotonic()>=self.grace_until:
-                    old=self.policy.index;p=self.policy.tick()
-                    if p:
-                        try:self.apply(p,self.policy.reason)
-                        except Exception:self.policy.index=old
+            self.poll()
             time.sleep(.3)
     def manual(self,name):
         p=next((p for p in ALL_PROFILES if p.name==name),None)
